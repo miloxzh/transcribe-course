@@ -1,0 +1,25 @@
+{
+  "name": "transcribe-course",
+  "displayName": "Transcribe Course",
+  "version": "0.1.0",
+  "description": "Turn course videos (slide lectures, exercise and rehab demos) into verbatim-level Markdown notes with the important frames embedded: local Whisper on GPU, slide/frame detection, a writing subagent bound to a strict transcription spec, and a mechanical gate (template check + transcript coverage).",
+  "author": {
+    "name": "Milo Xu",
+    "url": "https://github.com/miloxzh"
+  },
+  "repository": "https://github.com/miloxzh/transcribe-course",
+  "license": "MIT",
+  "keywords": [
+    "transcription",
+    "whisper",
+    "faster-whisper",
+    "video",
+    "lecture",
+    "course",
+    "notes",
+    "obsidian",
+    "rehab",
+    "fitness"
+  ],
+  "homepage": "https://github.com/miloxzh/transcribe-course"
+}

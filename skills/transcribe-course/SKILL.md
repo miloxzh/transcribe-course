@@ -17,8 +17,10 @@ content — the writing agent writes, the gate checks, you steer.
 
 **Scripts.** They live in `${CLAUDE_SKILL_DIR}/scripts/`. Below, `TC` means
 `python "${CLAUDE_SKILL_DIR}/scripts/tc.py"` — use the interpreter that has faster-whisper installed
-(`python`, `python3`, or a venv). If the variable did not expand, find the script with Glob
-`**/skills/transcribe-course/scripts/tc.py`.
+(`python`, `python3`, or a venv). If the variable did not expand (hosts other than Claude Code, such as
+WorkBuddy, CodeBuddy, Codex or Cursor, do not define it), the scripts sit next to this SKILL.md: search for
+`scripts/tc.py` inside the folder this skill was loaded from (`~/.claude/skills/transcribe-course/`,
+`~/.workbuddy/skills/transcribe-course/`, a plugin cache, …) and use that absolute path.
 
 **Workspace.** A workspace is any folder holding `transcribe-course.json` (videos/, transcripts/, frames/,
 notes/). Commands find it from the current directory or `--workspace <folder>`; pass `--workspace`
@@ -128,6 +130,10 @@ Pick the writer from the agent types available in this session:
   session's effort level; at high or max effort the same draft takes 3–5× longer and costs 3× the tokens
   (measured: 41 min vs 8 min on one lesson) because the model keeps re-reading and re-judging. Install the
   agents, or set the session to medium effort, before transcribing more than one video this way.
+- No way to spawn a subagent at all in this host: write the note yourself in this session. Read
+  `${CLAUDE_SKILL_DIR}/references/writer-prompt.md` and the spec, then follow the filled brief exactly as an
+  agent would — one output file, transcript in order, second pass, `verified: pass` only after it. The gate
+  in step 6 applies unchanged.
 
 Decide the note type unless the user passed `--type`: slides plus speech, possibly ending in a summary and a
 plan → `lecture`; one movement, drill or protocol demonstrated on camera (2–8 minutes) → `technique`.

@@ -107,7 +107,16 @@ claude plugin install transcribe-course@transcribe-course
 **Manually:** clone the repo, copy `skills/transcribe-course/` into `~/.claude/skills/` and `agents/*.md`
 into `~/.claude/agents/` (or the project's `.claude/`), then restart Claude Code — agents load at session start.
 
-**Python packages** (into the interpreter Claude will call as `python`):
+**Other hosts that read the Agent Skills format (WorkBuddy, CodeBuddy, Codex, Cursor, …):** copy the
+`skills/transcribe-course/` folder into that tool's skills directory (WorkBuddy: `~/.workbuddy/skills/`, or
+import it through its "upload local skill" dialog; CodeBuddy CLI: `codebuddy plugin marketplace add
+miloxzh/transcribe-course` then `codebuddy plugin install transcribe-course@transcribe-course`), restart the
+tool, and ask for a transcription in plain words instead of the slash command. The `agents/` definitions are
+optional there: when the host cannot spawn a subagent, the skill writes the note in the main session and runs
+the same gate. `${CLAUDE_SKILL_DIR}` is a Claude Code variable; on other hosts the skill locates its own
+`scripts/tc.py` by path.
+
+**Python packages** (into the interpreter the tool will call as `python`):
 ```bash
 pip install -r requirements.txt
 ```

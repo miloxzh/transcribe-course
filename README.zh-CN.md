@@ -83,7 +83,14 @@ claude plugin install transcribe-course@transcribe-course
 
 **手动装：** 克隆仓库，把 `skills/transcribe-course/` 复制到 `~/.claude/skills/`，`agents/*.md` 复制到 `~/.claude/agents/`（或项目的 `.claude/` 下），然后重开 Claude Code——子代理只在会话启动时加载。
 
-**Python 包**（装进 Claude 调用 `python` 时用的那个解释器）：
+**其他支持 Agent Skills 格式的工具（WorkBuddy、CodeBuddy、Codex、Cursor 等）：** 把 `skills/transcribe-course/`
+整个文件夹复制到那个工具的技能目录（WorkBuddy 是 `~/.workbuddy/skills/`，也可以在它的「上传本地技能」里导入；
+CodeBuddy 命令行用 `codebuddy plugin marketplace add miloxzh/transcribe-course` 再
+`codebuddy plugin install transcribe-course@transcribe-course`），重启工具，然后用一句话说明要转录哪个视频，
+不用斜杠命令。`agents/` 里的子代理在这些工具上是可选的：不能开子代理时，skill 会在主会话里自己写稿，门禁照跑。
+`${CLAUDE_SKILL_DIR}` 是 Claude Code 的变量，其他工具上 skill 会按路径自己找到 `scripts/tc.py`。
+
+**Python 包**（装进工具调用 `python` 时用的那个解释器）：
 ```bash
 pip install -r requirements.txt
 ```
