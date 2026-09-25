@@ -41,6 +41,12 @@ faster-whisper cannot use the Mac GPU. `pip install mlx-whisper` adds the MLX ba
 produce a stray sentence; the loop check still runs and the writer treats it like any other transcript.
 Intel Macs stay on the CPU path.
 
+**macOS: `doctor` prints "Class AVFFrameReceiver is implemented in both … av … and … cv2 …"**
+PyAV and OpenCV each bundle their own ffmpeg libraries and macOS warns when both load into one process.
+Only `doctor` imports both; `transcribe` uses PyAV alone and `frames`/`subs` use OpenCV alone, so the
+warning has no effect on the pipeline. If a command ever crashes with it, replace the OpenCV wheel:
+`pip uninstall opencv-python && pip install opencv-python-headless`.
+
 **Vocabulary does not seem to help**
 Whisper uses only the last ~224 tokens of the initial prompt. Put the most important terms at the end of
 `vocab.txt` and delete groups your course never uses. The prompt biases spelling of what is heard; it
