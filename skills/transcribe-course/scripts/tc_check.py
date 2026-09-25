@@ -62,13 +62,33 @@ def coverage(segments, body):
     return hit, tot, misses, cjk
 
 
-def section_at(body: str, sec: int) -> str:
+def section_at(body: str, sec: int, seg_text: str = "") -> str:
+    """The stamped section covering `sec`; for notes without stamped sections (technique notes),
+    the paragraph that contains one of the segment's shingles."""
     stamps = h3_stamps(body)
     lines = body.split("\n")
     for i, (title, a, b, ln) in enumerate(stamps):
         if a <= sec <= b:
             end = stamps[i + 1][3] - 1 if i + 1 < len(stamps) else len(lines)
             return "\n".join(lines[ln - 1:end]).strip()
+    if seg_text:
+        cjk = is_cjk_text(seg_text)
+        paras = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+        if cjk:
+            t = norm_text(seg_text)
+            grams = [t[i:i + 4] for i in range(len(t) - 3)]
+            for p in paras:
+                np_ = norm_text(p)
+                if any(g in np_ for g in grams):
+                    return "(paragraph) " + p
+        else:
+            words = WORD_RE.findall(seg_text.lower())
+            grams = [" ".join(words[i:i + 3]) for i in range(len(words) - 2)]
+            for p in paras:
+                lp = " ".join(WORD_RE.findall(p.lower()))
+                if any(g in lp for g in grams):
+                    return "(paragraph) " + p
+        return "(no paragraph shares a shingle with this segment — corrected word, or missing)"
     return "(no stamped section covers %s)" % fmt_mmss(sec)
 
 
@@ -131,7 +151,7 @@ def main(argv):
         sec = int(s["start"])
         say("\n--- %s transcript: %s" % (fmt_mmss(sec), s["text"].strip()))
         for n in a.notes:
-            txt = section_at(bodies[n], sec)
+            txt = section_at(bodies[n], sec, s["text"])
             say("  [%s]\n    %s" % (Path(n).name, txt[:420].replace("\n", "\n    ")))
 
     say("\n" + "=" * 70)
