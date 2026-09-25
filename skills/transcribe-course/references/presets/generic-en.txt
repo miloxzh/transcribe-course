@@ -1,0 +1,6 @@
+# Generic (English) — Whisper initial-prompt vocabulary
+# One group per line, comma-separated. Lines starting with # are ignored. Whisper only uses the last ~224 tokens:
+# put the terms that matter most at the end and keep the file short.
+# Add this course's proper nouns, names, equipment and recurring acronyms below. After the first transcript,
+# look at transcripts/*.txt for the words that came out wrong most often and add them here.
+lesson, demonstration, key points, summary

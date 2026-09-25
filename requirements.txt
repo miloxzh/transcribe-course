@@ -1,0 +1,14 @@
+# Core (all platforms). Python 3.9+.
+faster-whisper>=1.1.0        # Whisper via CTranslate2; brings ctranslate2, av (PyAV), tokenizers, huggingface-hub
+opencv-python>=4.8           # frame sampling and slide/cut detection
+numpy>=1.24
+Pillow>=10.0                 # contact sheets, subtitle strips
+
+# NVIDIA GPU on Windows / Linux (strongly recommended: 10–20× realtime instead of ~1×):
+# the CUDA runtime libraries as pip wheels, no CUDA toolkit install needed.
+nvidia-cublas-cu12; sys_platform != "darwin"
+nvidia-cudnn-cu12; sys_platform != "darwin"
+
+# Optional: ffmpeg as a pip package if you do not want to install it system-wide.
+# Only used to speed up sequential frame extraction (AV1/VP9 videos) and accurate frame grabs.
+# imageio-ffmpeg

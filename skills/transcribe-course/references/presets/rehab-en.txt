@@ -1,0 +1,11 @@
+# Sports rehab / physiotherapy courses (English) — Whisper initial-prompt vocabulary
+# One group per line, comma-separated. Lines starting with # are ignored. Whisper only uses the last ~224 tokens:
+# put the terms that matter most at the end and keep the file short. Delete groups your course never uses.
+glenohumeral joint, scapula, rotator cuff, supraspinatus, infraspinatus, teres minor, subscapularis, acromion, acromioclavicular joint, long head of biceps, deltoid, upper trapezius, lower trapezius, serratus anterior, rhomboids, levator scapulae
+lumbar spine, thoracic spine, cervical spine, intervertebral disc, sacroiliac joint, multifidus, transversus abdominis, obliques, quadratus lumborum, erector spinae, iliopsoas, gluteus maximus, gluteus medius, piriformis, tensor fasciae latae, iliotibial band
+quadriceps, vastus medialis, hamstrings, adductors, patella, patellar tendon, meniscus, anterior cruciate ligament, ACL, PCL, MCL, gastrocnemius, soleus, tibialis anterior, peroneals, Achilles tendon, plantar fascia, subtalar joint
+flexion, extension, abduction, adduction, internal rotation, external rotation, pronation, supination, dorsiflexion, plantarflexion, inversion, eversion, upward rotation, downward rotation, protraction, retraction, elevation, depression, scapulohumeral rhythm, range of motion, ROM, end feel
+isometric, isotonic, concentric, eccentric, proprioception, neuromuscular control, motor control, compensation, activation, release, stretching, PNF, joint mobilisation, Maitland, Mulligan, myofascial, trigger point, foam roller, resistance band, closed chain, open chain
+pain score, VAS, NPRS, manual muscle testing, MMT, special tests, Neer test, Hawkins-Kennedy test, empty can test, Thomas test, Ober test, straight leg raise, FMS, Y balance test
+subacromial impingement, rotator cuff tear, frozen shoulder, adhesive capsulitis, tendinopathy, bursitis, patellofemoral pain syndrome, IT band syndrome, ankle sprain, chronic ankle instability, plantar fasciitis, disc herniation, non-specific low back pain, anterior pelvic tilt, upper crossed syndrome, lower crossed syndrome
+acute phase, subacute phase, return to sport, post-operative rehab, home exercise programme, RPE, sets, reps, load, progressive overload

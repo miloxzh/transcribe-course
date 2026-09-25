@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    name: gate (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Compile every script
+        run: python -m compileall -q skills/transcribe-course/scripts
+      - name: Manifests are valid JSON
+        run: python -c "import json; [json.load(open(p, encoding='utf-8')) for p in ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json']]"
+      - name: Gate on the bundled example (no Whisper needed)
+        run: |
+          python skills/transcribe-course/scripts/tc.py init tc-demo --preset generic-en
+          python skills/transcribe-course/scripts/tc.py check examples/en/L02_shoulder-assessment.json examples/en/L02_shoulder-assessment.md --workspace tc-demo
+      - name: Chinese templates load and verify a note type
+        run: |
+          python skills/transcribe-course/scripts/tc.py init tc-demo-zh --preset rehab-zh
+          python skills/transcribe-course/scripts/tc.py doctor --workspace tc-demo-zh || true

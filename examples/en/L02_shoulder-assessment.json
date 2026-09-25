@@ -1,0 +1,82 @@
+{
+ "text": "Welcome back everyone, today we are looking at the shoulder and how the rotator cuff keeps the humeral head centred. The four rotator cuff muscles are supraspinatus, infraspinatus, teres minor and subscapularis, and they work as a force couple. When the deltoid pulls the arm up, the cuff pulls the head down and in, otherwise the head migrates superiorly and hits the acromion. That superior migration is one mechanism behind subacromial impingement, but it is not the only one, so be careful with the label. For assessment we start with active range of motion in flexion, abduction and external rotation, and we note the painful arc between sixty and one hundred twenty degrees. Then manual muscle testing, grade zero to five, and I usually test external rotation at the side first because it is the least provocative. The empty can test loads supraspinatus; a positive test is pain or weakness, and the sensitivity in the literature is around seventy to eighty percent. In the acute phase, the first one to two weeks, we keep isometrics at twenty to thirty percent of maximum, five seconds hold, ten repetitions. From week three we progress to isotonic external rotation with a band, three sets of fifteen, RPE around six, and we stop if pain goes above three out of ten. Week six onwards we add closed chain loading like the wall push-up plus, and this is where serratus anterior really starts to matter. To summarise: centre the head, restore rotation range, load the cuff progressively, then integrate the scapula. That is all for today, next lesson we cover the frozen shoulder protocol, thanks for watching.",
+ "segments": [
+  {
+   "id": 0,
+   "start": 0,
+   "end": 12,
+   "text": "Welcome back everyone, today we are looking at the shoulder and how the rotator cuff keeps the humeral head centred."
+  },
+  {
+   "id": 1,
+   "start": 12,
+   "end": 30,
+   "text": "The four rotator cuff muscles are supraspinatus, infraspinatus, teres minor and subscapularis, and they work as a force couple."
+  },
+  {
+   "id": 2,
+   "start": 30,
+   "end": 55,
+   "text": "When the deltoid pulls the arm up, the cuff pulls the head down and in, otherwise the head migrates superiorly and hits the acromion."
+  },
+  {
+   "id": 3,
+   "start": 55,
+   "end": 80,
+   "text": "That superior migration is one mechanism behind subacromial impingement, but it is not the only one, so be careful with the label."
+  },
+  {
+   "id": 4,
+   "start": 80,
+   "end": 110,
+   "text": "For assessment we start with active range of motion in flexion, abduction and external rotation, and we note the painful arc between sixty and one hundred twenty degrees."
+  },
+  {
+   "id": 5,
+   "start": 110,
+   "end": 140,
+   "text": "Then manual muscle testing, grade zero to five, and I usually test external rotation at the side first because it is the least provocative."
+  },
+  {
+   "id": 6,
+   "start": 140,
+   "end": 170,
+   "text": "The empty can test loads supraspinatus; a positive test is pain or weakness, and the sensitivity in the literature is around seventy to eighty percent."
+  },
+  {
+   "id": 7,
+   "start": 170,
+   "end": 200,
+   "text": "In the acute phase, the first one to two weeks, we keep isometrics at twenty to thirty percent of maximum, five seconds hold, ten repetitions."
+  },
+  {
+   "id": 8,
+   "start": 200,
+   "end": 240,
+   "text": "From week three we progress to isotonic external rotation with a band, three sets of fifteen, RPE around six, and we stop if pain goes above three out of ten."
+  },
+  {
+   "id": 9,
+   "start": 240,
+   "end": 280,
+   "text": "Week six onwards we add closed chain loading like the wall push-up plus, and this is where serratus anterior really starts to matter."
+  },
+  {
+   "id": 10,
+   "start": 280,
+   "end": 320,
+   "text": "To summarise: centre the head, restore rotation range, load the cuff progressively, then integrate the scapula."
+  },
+  {
+   "id": 11,
+   "start": 320,
+   "end": 345,
+   "text": "That is all for today, next lesson we cover the frozen shoulder protocol, thanks for watching."
+  }
+ ],
+ "language": "en",
+ "model": "large-v3",
+ "device": "cuda",
+ "source": "L02_shoulder-assessment.mp4",
+ "duration": 345
+}
