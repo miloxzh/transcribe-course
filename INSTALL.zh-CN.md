@@ -53,7 +53,7 @@ WorkBuddy 内嵌的是 CodeBuddy 命令行，插件命令一样。在 WorkBuddy 
 
 ---
 
-## 三、装 Python 包
+## 三、装 Python 包（Windows）
 
 在终端里执行（装进你平时用的那个 Python）：
 
@@ -67,21 +67,11 @@ pip install faster-whisper opencv-python numpy Pillow
 pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
 ```
 
-**Apple 芯片的 Mac** 再加一条（让 Whisper 跑在 Mac 的 GPU 上，装了就自动选用）：
-
-```
-pip install mlx-whisper
-```
-
-Mac 上 Python 通常要用 `python3` 和 `pip3`；`.workbuddy`、`.claude` 这些隐藏目录在访达里按 Command+Shift+. 显示。
-
-国内下载模型慢，先设一个镜像。Windows 在 PowerShell 里执行，然后重启工具：
+国内下载模型慢，先设一个镜像。在 PowerShell 里执行，然后重启工具：
 
 ```
 setx HF_ENDPOINT https://hf-mirror.com
 ```
-
-macOS / Linux 在 `~/.zshrc` 或 `~/.bashrc` 里加一行 `export HF_ENDPOINT=https://hf-mirror.com`。
 
 ffmpeg 可装可不装。B 站下载的 AV1 视频装了会快很多：
 
@@ -89,7 +79,61 @@ ffmpeg 可装可不装。B 站下载的 AV1 视频装了会快很多：
 winget install Gyan.FFmpeg
 ```
 
-（macOS 用 `brew install ffmpeg`，Linux 用 `apt install ffmpeg`。）
+Mac 用户跳过这一节，看下一节。
+
+---
+
+## 三（Mac）、Mac 的步骤（整段照做）
+
+Mac 上的差别只有三处：命令叫 `python3`/`pip3`，Whisper 走 Apple 芯片的 GPU 要多装一个包，隐藏目录要按快捷键才看得见。按顺序来：
+
+1. **确认 Python。** 打开「终端」，输入：
+
+   ```
+   python3 --version
+   ```
+
+   显示 3.9 以上就行。没有的话先装 Homebrew（brew.sh 首页那一条命令），再 `brew install python`。
+
+2. **装 Python 包。**
+
+   ```
+   pip3 install faster-whisper opencv-python numpy Pillow
+   ```
+
+   Apple 芯片（M1、M2、M3、M4）的 Mac 再加一条，让 Whisper 跑在 Mac 的 GPU 上，装了就自动选用：
+
+   ```
+   pip3 install mlx-whisper
+   ```
+
+   Intel 芯片的 Mac 不用装这条，会走 CPU，20 分钟的课大约要等 20 分钟。
+   （看芯片：左上角苹果菜单 → 关于本机，「芯片」一栏写 Apple M 开头就是 Apple 芯片。）
+
+3. **装 ffmpeg（建议装）。** B 站下载的 AV1 视频抽帧会快很多：
+
+   ```
+   brew install ffmpeg
+   ```
+
+4. **国内先设模型镜像。** 在终端里执行下面两条，然后重开终端和工具：
+
+   ```
+   echo 'export HF_ENDPOINT=https://hf-mirror.com' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+5. **装技能。** 和第二节一样：Claude Code 或 WorkBuddy 里输入
+   `/plugin marketplace add miloxzh/transcribe-course`，再 `/plugin install transcribe-course@transcribe-course`，重启。
+   手动复制的话，技能目录在 `~/.workbuddy/skills/`（WorkBuddy）或 `~/.claude/skills/`（Claude Code）。
+   这些以点开头的目录在访达里默认看不见，按 **Command + Shift + .** 显示；也可以在终端里 `open ~/.workbuddy/skills` 直接打开。
+
+6. **体检。** 第一次用时让它跑环境体检（第五节第 2 步）。Apple 芯片的 Mac 应该看到一行
+   「Apple Silicon: mlx-whisper installed → backend mlx」。体检里如果出现一条
+   「Class AVFFrameReceiver is implemented in both …」的警告，不用管，实际转写和抽帧各自只用其中一个库；
+   真崩了再 `pip3 uninstall opencv-python`，改装 `pip3 install opencv-python-headless`。
+
+7. **抽帧想用 Mac 的硬件解码**（可选）：在工作区的 `transcribe-course.json` 里把 `"hwaccel"` 填成 `"videotoolbox"`。
 
 ---
 
