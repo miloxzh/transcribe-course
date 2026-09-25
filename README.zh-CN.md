@@ -203,7 +203,7 @@ python skills/transcribe-course/scripts/tc.py check examples/en/L02_shoulder-ass
 
 ## 致谢
 
-流程、规范和踩过的坑：Milo Xu，在转录一个形体训练营的课程时攒下来的。用 Claude Code 搭建。
+流程、规范和踩过的坑：Milo Xu，在转录课程时攒下来的。用 Claude Code 搭建。
 语音识别：[faster-whisper](https://github.com/SYSTRAN/faster-whisper) / OpenAI Whisper large-v3。
 
 MIT 许可。
