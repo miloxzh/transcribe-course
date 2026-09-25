@@ -16,15 +16,21 @@ Two detectors run on a one-frame-per-second sample and are merged:
   live   — for people on camera (exercise demos). Mean grey-level difference to the last kept frame
            above --thr, at least 2 s apart, taking the frame one second after the cut.
            Live candidates inside a still slide range are dropped (the slide already covers them).
+           A person moving continuously trips this every few seconds; when more than --max-live
+           candidates result, the minimum gap is doubled until the count fits (time coverage is kept,
+           density is reduced). --max-live 0 keeps everything.
 
 Sampling method (--method):
   seek        one seek per second with OpenCV. Fast for H.264/HEVC.
-  sequential  decode every frame in order. Required for AV1/VP9 (seeking re-decodes from a keyframe
-              each time and can take 10+ minutes). Uses ffmpeg if available (optionally --hwaccel cuda),
-              otherwise OpenCV. Chosen automatically when the codec is av01/vp09.
+  sequential  decode every frame in order and keep one per second in the system temp folder.
+              Required for AV1/VP9 (seeking re-decodes from a keyframe each time and can take 10+
+              minutes). Uses ffmpeg if available (optionally --hwaccel cuda), otherwise OpenCV.
+              Chosen automatically when the codec is av01/vp09. Candidates are copied from the
+              per-second dump, so no seeking happens at all.
 
-Output in frames/{stem}/: {stem}_{mmss}.jpg candidates at full resolution, _sheet_N.jpg contact
-sheets (12 per sheet, labelled mm:ss + detector), _candidates.tsv, and _overview_N.jpg when --overview.
+Output in frames/{stem}/: {stem}_{mmss}.jpg candidates at full resolution (capped at 1920 px wide),
+_sheet_N.jpg contact sheets (12 per sheet, labelled mm:ss + detector), _candidates.tsv, and
+_overview_N.jpg when --overview.
 """
 from __future__ import annotations
 
@@ -42,6 +48,7 @@ from tc_common import (add_workspace_arg, die, find_ffmpeg, find_font, find_work
                        imread_any, imwrite_jpg, parse_time, say, stem_of, video_info)
 
 SEQUENTIAL_CODECS = {"av01", "vp09", "vp90", "vp08"}
+MAX_WIDTH = 1920
 
 
 # ------------------------------------------------------------------ sampling --
@@ -61,7 +68,17 @@ def _features(frame):
     return m, s, (buf.tobytes() if ok else b"")
 
 
+def _shrink(frame):
+    import cv2
+    w = frame.shape[1]
+    if w > MAX_WIDTH:
+        h = int(frame.shape[0] * MAX_WIDTH / w)
+        return cv2.resize(frame, (MAX_WIDTH, h), interpolation=cv2.INTER_AREA)
+    return frame
+
+
 def sample_seek(video: Path, total_secs: int, progress):
+    """One OpenCV seek per second. Returns secs, M, S, thumbs; candidates are re-read later."""
     import cv2
     cap = cv2.VideoCapture(str(video))
     secs, M, S, T = [], [], [], []
@@ -74,63 +91,78 @@ def sample_seek(video: Path, total_secs: int, progress):
         secs.append(t); M.append(m); S.append(s); T.append(th)
         progress(t)
     cap.release()
-    return secs, M, S, T
+    return secs, M, S, T, None
 
 
-def sample_sequential_cv2(video: Path, fps: float, progress):
+def _dump_dir(stem: str, fresh: bool) -> Path:
+    tmp = Path(tempfile.gettempdir()) / "transcribe-course" / "fps1" / stem
+    if fresh and tmp.exists():
+        shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir(parents=True, exist_ok=True)
+    return tmp
+
+
+def extract_sequential_ffmpeg(video: Path, ffmpeg: str, hwaccel: str, tmp: Path):
+    """One full-resolution JPEG per second into tmp/000001.jpg… (file N = second N-1)."""
+    cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin"]
+    if hwaccel:
+        cmd += ["-hwaccel", hwaccel]
+    cmd += ["-i", str(video), "-vf", "fps=1,scale='min(%d,iw)':-2" % MAX_WIDTH, "-q:v", "3", str(tmp / "%06d.jpg")]
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        if hwaccel:
+            say("  ffmpeg with -hwaccel %s failed, retrying in software" % hwaccel)
+            for f in tmp.glob("*.jpg"):
+                f.unlink()
+            return extract_sequential_ffmpeg(video, ffmpeg, "", tmp)
+        die("ffmpeg extraction failed: %s" % r.stderr.strip()[-400:])
+
+
+def extract_sequential_cv2(video: Path, fps: float, tmp: Path, progress):
     import cv2
     cap = cv2.VideoCapture(str(video))
     step = max(1, int(round(fps)))
-    secs, M, S, T = [], [], [], []
     idx = 0
     while True:
-        ok = cap.grab()
-        if not ok:
+        if not cap.grab():
             break
         if idx % step == 0:
             ok, frame = cap.retrieve()
             if ok:
                 t = idx // step
-                m, s, th = _features(frame)
-                secs.append(t); M.append(m); S.append(s); T.append(th)
+                imwrite_jpg(tmp / ("%06d.jpg" % (t + 1)), _shrink(frame), 90)
                 progress(t)
         idx += 1
     cap.release()
-    return secs, M, S, T
 
 
-def sample_sequential_ffmpeg(video: Path, ffmpeg: str, hwaccel: str, stem: str, fresh: bool, progress):
-    tmp = Path(tempfile.gettempdir()) / "transcribe-course" / "fps1" / stem
-    if fresh and tmp.exists():
-        shutil.rmtree(tmp, ignore_errors=True)
-    tmp.mkdir(parents=True, exist_ok=True)
+def sample_sequential(video: Path, fps: float, ffmpeg: str | None, hwaccel: str, stem: str, fresh: bool, progress):
+    tmp = _dump_dir(stem, fresh)
     files = sorted(tmp.glob("*.jpg"))
     if not files:
-        cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin"]
-        if hwaccel:
-            cmd += ["-hwaccel", hwaccel]
-        cmd += ["-i", str(video), "-vf", "fps=1,scale=640:-2", "-q:v", "3", str(tmp / "%06d.jpg")]
-        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
-        if r.returncode != 0:
-            if hwaccel:
-                say("  ffmpeg with -hwaccel %s failed, retrying in software" % hwaccel)
-                return sample_sequential_ffmpeg(video, ffmpeg, "", stem, True, progress)
-            die("ffmpeg extraction failed: %s" % r.stderr.strip()[-400:])
+        if ffmpeg:
+            extract_sequential_ffmpeg(video, ffmpeg, hwaccel, tmp)
+        else:
+            extract_sequential_cv2(video, fps, tmp, progress)
         files = sorted(tmp.glob("*.jpg"))
-    secs, M, S, T = [], [], [], []
-    for f in files:                                   # file N corresponds to second N-1
+    else:
+        say("  reusing %d per-second frames in %s (--fresh to redo)" % (len(files), tmp))
+    secs, M, S, T, paths = [], [], [], [], {}
+    for f in files:
         t = int(f.stem) - 1
         frame = imread_any(f)
         if frame is None:
             continue
         m, s, th = _features(frame)
         secs.append(t); M.append(m); S.append(s); T.append(th)
-        progress(t)
-    return secs, M, S, T
+        paths[t] = f
+        if ffmpeg:
+            progress(t)
+    return secs, M, S, T, paths
 
 
 # ----------------------------------------------------------------- detection --
-def detect(secs, M, S, frac_thr, stable_thr, live_thr):
+def detect(secs, M, S, frac_thr, stable_thr, live_thr, max_live):
     import numpy as np
     n = len(secs)
     frac = np.zeros(n)
@@ -150,28 +182,35 @@ def detect(secs, M, S, frac_thr, stable_thr, live_thr):
         slide.append((secs[j], "slide", float(frac[b]) if b < n else 0.0))
         static_ranges.append((secs[a], secs[b - 1]))
 
-    live, last_s, last_t = [], None, -10
-    for k in range(n):
-        t = secs[k]
-        d = 999.0 if last_s is None else float(np.abs(S[k] - last_s).mean())
-        if d > live_thr and t - last_t >= 2:
-            kk = k + 1 if k + 1 < n else k
-            live.append((secs[kk], "live", d))
-            last_t, last_s = t, S[kk]
-        elif last_s is None:
-            last_s = S[k]
-
     def in_static(t):
         return any(a <= t <= b for a, b in static_ranges)
 
-    live = [c for c in live if not in_static(c[0])]
+    def live_pass(gap):
+        live, last_s, last_t = [], None, -10 * gap
+        for k in range(n):
+            t = secs[k]
+            d = 999.0 if last_s is None else float(np.abs(S[k] - last_s).mean())
+            if d > live_thr and t - last_t >= gap:
+                kk = k + 1 if k + 1 < n else k
+                live.append((secs[kk], "live", d))
+                last_t, last_s = t, S[kk]
+            elif last_s is None:
+                last_s = S[k]
+        return [c for c in live if not in_static(c[0])]
+
+    gap = 2
+    live = live_pass(gap)
+    while max_live > 0 and len(live) > max_live and gap < 64:
+        gap *= 2
+        live = live_pass(gap)
+
     seen, kept = set(), []
     for c in sorted(slide + live):
         if c[0] in seen:
             continue
         seen.add(c[0])
         kept.append(c)
-    return kept, len(cuts)
+    return kept, len(cuts), gap
 
 
 # ------------------------------------------------------------------ grabbing --
@@ -249,9 +288,10 @@ def main(argv):
     ap.add_argument("--frac", type=float, default=0.01, help="slide: changed-pixel fraction that counts as a page change (default 0.01)")
     ap.add_argument("--stable", type=float, default=0.003, help="slide: fraction below which the page counts as still (default 0.003)")
     ap.add_argument("--thr", type=float, default=14.0, help="live: mean grey difference for a cut (default 14)")
+    ap.add_argument("--max-live", type=int, default=120, help="thin live candidates above this count by widening the gap (default 120; 0 = keep all)")
     ap.add_argument("--overview", type=int, default=0, help="also write overview sheets, one thumbnail every N seconds")
     ap.add_argument("--hwaccel", default=None, help="ffmpeg -hwaccel for sequential mode (e.g. cuda); default from config")
-    ap.add_argument("--fresh", action="store_true", help="discard the cached 1-fps extraction")
+    ap.add_argument("--fresh", action="store_true", help="discard the cached per-second extraction")
     add_workspace_arg(ap)
     a = ap.parse_args(argv)
 
@@ -269,7 +309,7 @@ def main(argv):
     if method == "auto":
         method = "sequential" if info["codec"] in SEQUENTIAL_CODECS else "seek"
     say("video  %s | %dx%d %.2f fps | %s | codec %s" % (video.name, info["width"], info["height"], info["fps"], fmt_mmss(total), info["codec"] or "?"))
-    say("method %s%s" % (method, " (ffmpeg%s)" % (" -hwaccel " + hwaccel if hwaccel else "") if (method == "sequential" and ffmpeg) else ""))
+    say("method %s%s" % (method, (" (ffmpeg%s)" % (" -hwaccel " + hwaccel if hwaccel else "")) if (method == "sequential" and ffmpeg) else (" (OpenCV)" if method == "sequential" else "")))
 
     last = [-1]
 
@@ -279,15 +319,13 @@ def main(argv):
             say("  sampled to %s…" % fmt_mmss(t))
 
     if method == "seek":
-        secs, M, S, T = sample_seek(video, total, progress)
-    elif ffmpeg:
-        secs, M, S, T = sample_sequential_ffmpeg(video, ffmpeg, hwaccel, stem, a.fresh, progress)
+        secs, M, S, T, paths = sample_seek(video, total, progress)
     else:
-        secs, M, S, T = sample_sequential_cv2(video, info["fps"], progress)
+        secs, M, S, T, paths = sample_sequential(video, info["fps"], ffmpeg, hwaccel, stem, a.fresh, progress)
     if not secs:
         die("no frames could be read from %s" % video)
 
-    kept, n_cuts = detect(secs, M, S, a.frac, a.stable, a.thr)
+    kept, n_cuts, gap = detect(secs, M, S, a.frac, a.stable, a.thr, a.max_live)
 
     for f in os.listdir(out_dir):                      # clear the previous run's candidates and sheets
         if (f.startswith(stem + "_") and f.endswith(".jpg")) or f.startswith("_sheet_") or f.startswith("_overview_"):
@@ -295,11 +333,14 @@ def main(argv):
     rows = ["sec\ttime\tkind\tvalue\tfile"]
     named = []
     for t, kind, val in kept:
-        frame = grab_frame(video, t, ffmpeg)
-        if frame is None:
-            continue
         name = "%s_%s.jpg" % (stem, fmt_stamp(t))
-        if imwrite_jpg(out_dir / name, frame):
+        if paths and t in paths:
+            shutil.copyfile(paths[t], out_dir / name)
+            ok = True
+        else:
+            frame = grab_frame(video, t, ffmpeg)
+            ok = frame is not None and imwrite_jpg(out_dir / name, _shrink(frame))
+        if ok:
             named.append((t, kind, name))
             rows.append("%d\t%s\t%s\t%.4f\t%s" % (t, fmt_mmss(t), kind, val, name))
     (out_dir / "_candidates.tsv").write_text("\n".join(rows) + "\n", encoding="utf-8")
@@ -308,6 +349,9 @@ def main(argv):
     n_slide = sum(1 for c in named if c[1] == "slide")
     say("candidates %d (slide %d / live %d) → %s" % (len(named), n_slide, len(named) - n_slide, out_dir))
     say("contact sheets %d; page changes detected %d" % (pages, n_cuts))
+    if gap > 2:
+        say("live candidates thinned to a minimum gap of %d s (a person moving on camera trips the cut detector constantly);"
+            " --max-live 0 keeps all, --overview 3 is the better tool for demo videos" % gap)
     if a.overview:
         say("overview sheets %d (every %d s)" % (overview_sheets(out_dir, secs, T, a.overview), a.overview))
     if total > 300 and len(named) < 3:

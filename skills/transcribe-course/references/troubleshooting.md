@@ -42,16 +42,21 @@ does not teach new words the model has never seen.
 **`frames` runs for ten minutes and produces nothing**
 The video is AV1 or VP9 (common for bilibili and YouTube downloads); per-second seeking re-decodes from a
 keyframe each time. The `auto` method detects `av01`/`vp09` and switches to sequential decoding; if the
-codec string is empty or unusual, force it: `--method sequential`. With ffmpeg installed this takes about
-a minute (`--hwaccel cuda` for NVIDIA); the OpenCV fallback takes a few minutes.
+codec string is empty or unusual, force it: `--method sequential`. Measured on a 17-minute 1080×1920 AV1
+video: ffmpeg software decode 2 min 49 s, ffmpeg with `--hwaccel cuda` 58 s, and 13 s on a rerun because
+the per-second dump is kept in the system temp folder (about 10 MB per minute of video; `--fresh` redoes
+it). The OpenCV-only fallback works but is several times slower — install ffmpeg for AV1 courses.
 
 **A 20-minute slide lecture yields one or two candidates**
 Dark slide themes with small changing text fall under the default change threshold. Look at the contact
 sheets first, then rerun with `--frac 0.005`. Do not conclude "no slides" from the candidate count.
 
-**A demo video yields 40+ `live` candidates**
-Normal — a person moving triggers the cut detector. Use `--overview 3` and pick from the overview sheets
-(one thumbnail every 3 seconds); keep 2–6 frames that show settings, angles or wrong-vs-right comparisons.
+**A demo video yields dozens of `live` candidates**
+Normal — a person moving triggers the cut detector every few seconds. Above `--max-live` (default 120)
+the minimum gap between live candidates is doubled until the count fits, so time coverage is kept and
+density drops; the log says when that happened. For demo videos use `--overview 3` and pick from the
+overview sheets (one thumbnail every 3 seconds); keep 2–6 frames that show settings, angles or
+wrong-vs-right comparisons.
 
 **Labels on the sheets show boxes instead of characters**
 No CJK-capable font was found. The scripts try Microsoft YaHei, PingFang, Noto Sans CJK and WenQuanYi;

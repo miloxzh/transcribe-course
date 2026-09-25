@@ -190,6 +190,8 @@ python skills/transcribe-course/scripts/tc.py check examples/en/L02_shoulder-ass
 | 写稿（Sonnet，medium） | 11 分钟，14.3 万 token | 3–5 分钟，5–6 万 token |
 | 覆盖率 | 99.6% | 100% |
 
+17 分钟的 AV1 示范视频（B 站下载，1080×1920）：顺序抽帧 ffmpeg 软解 2 分 49 秒，`--hwaccel cuda` 58 秒，重跑时复用按秒转储只要 13 秒。
+
 出问题看 [references/troubleshooting.md](skills/transcribe-course/references/troubleshooting.md)（英文）。
 
 ## 致谢

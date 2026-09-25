@@ -216,6 +216,9 @@ python skills/transcribe-course/scripts/tc.py check examples/en/L02_shoulder-ass
 | writer (Sonnet, medium) | 11 min, 143 k tokens | 3–5 min, 50–60 k tokens |
 | coverage | 99.6 % | 100 % |
 
+A 17-minute AV1 demo video (bilibili download, 1080×1920): sequential frame extraction 2 min 49 s with
+ffmpeg in software, 58 s with `--hwaccel cuda`, 13 s on a rerun from the cached per-second dump.
+
 Troubles → [references/troubleshooting.md](skills/transcribe-course/references/troubleshooting.md).
 
 ## Credits

@@ -81,7 +81,9 @@ TC frames "<video>" --workspace "<ws>" --overview 3    # demo videos: add an eve
 ```
 Output in `frames/{stem}/`: candidates `{stem}_{mmss}.jpg`, `_sheet_N.jpg` (12 per sheet, labelled
 `mm:ss detector file`), `_candidates.tsv`, optional `_overview_N.jpg`. AV1/VP9 videos switch to sequential
-decoding automatically (the log line `method sequential` says so); it takes a minute or two.
+decoding automatically (the log line `method sequential` says so): one to three minutes with ffmpeg,
+seconds on a rerun. When a person on camera trips the cut detector constantly, the log says the live
+candidates were thinned; that is expected for demo videos.
 
 **Look at every sheet with Read.** Small text unreadable on a sheet → open the candidate file. The criteria
 and the frame-list format are in `${CLAUDE_SKILL_DIR}/references/frame-picking.md`; the short version:
@@ -122,7 +124,10 @@ Pick the writer from the agent types available in this session:
 - `transcribe-course:transcriber-careful` / `transcriber-careful` — Opus; use when the user passed `--careful`,
   or when a draft fails the gate twice or stays under the coverage threshold.
 - Neither installed: `general-purpose` with `model: sonnet` (or `opus`), and put the text of
-  `${CLAUDE_SKILL_DIR}/references/writer-prompt.md` at the top of the prompt.
+  `${CLAUDE_SKILL_DIR}/references/writer-prompt.md` at the top of the prompt. This fallback inherits the
+  session's effort level; at high or max effort the same draft takes 3–5× longer and costs 3× the tokens
+  (measured: 41 min vs 8 min on one lesson) because the model keeps re-reading and re-judging. Install the
+  agents, or set the session to medium effort, before transcribing more than one video this way.
 
 Decide the note type unless the user passed `--type`: slides plus speech, possibly ending in a summary and a
 plan → `lecture`; one movement, drill or protocol demonstrated on camera (2–8 minutes) → `technique`.
