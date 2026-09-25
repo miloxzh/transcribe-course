@@ -99,7 +99,7 @@ lesson; the auditor gets the trail.
 
 **As a plugin (recommended):**
 ```bash
-claude plugin marketplace add OWNER/transcribe-course
+claude plugin marketplace add miloxzh/transcribe-course
 claude plugin install transcribe-course@transcribe-course
 ```
 (or `/plugin marketplace add …` and `/plugin install …` inside a session).

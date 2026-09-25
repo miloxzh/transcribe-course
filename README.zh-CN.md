@@ -76,7 +76,7 @@ gaps:
 
 **装成插件（推荐）：**
 ```bash
-claude plugin marketplace add OWNER/transcribe-course
+claude plugin marketplace add miloxzh/transcribe-course
 claude plugin install transcribe-course@transcribe-course
 ```
 （会话里用 `/plugin marketplace add …` 和 `/plugin install …` 也一样。）

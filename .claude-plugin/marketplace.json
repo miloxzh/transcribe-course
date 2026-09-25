@@ -1,7 +1,8 @@
 {
   "name": "transcribe-course",
   "owner": {
-    "name": "Milo Xu"
+    "name": "Milo Xu",
+    "url": "https://github.com/miloxzh"
   },
   "description": "Single-plugin marketplace for transcribe-course: course videos to verbatim-level notes.",
   "plugins": [
@@ -10,7 +11,13 @@
       "source": "./",
       "description": "Course videos (slide lectures, exercise/rehab demos) to verbatim-level Markdown notes with embedded frames. Local Whisper, frame picking, writing subagent, coverage gate.",
       "category": "Productivity",
-      "tags": ["transcription", "whisper", "video", "notes", "obsidian"]
+      "tags": [
+        "transcription",
+        "whisper",
+        "video",
+        "notes",
+        "obsidian"
+      ]
     }
   ]
 }
