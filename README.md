@@ -20,7 +20,7 @@ Obsidian vault, and generalised for any lecture-or-demo course: sports rehab, ph
 Pilates teacher training, coaching certifications, university lectures. Chinese and English templates ship;
 the note language follows the video.
 
-[中文说明 →](README.zh-CN.md)
+[中文说明 →](README.zh-CN.md) · [中文安装与使用说明（Claude Code / WorkBuddy）→](INSTALL.zh-CN.md)
 
 ---
 

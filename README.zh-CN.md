@@ -12,7 +12,7 @@
 
 最初是为了把一个 30 节课的形体训练营（幻灯片正课 + 80 多个动作视频）转进 Obsidian 做的，现在改成了通用版：运动康复、物理治疗、瑜伽普拉提教培、教练认证课、大学课程都能用。自带中文和英文两套模板，笔记语言跟着视频走。
 
-[English README →](README.md)
+[English README →](README.md) ｜ **第一次用先看 [安装与使用说明（中文）](INSTALL.zh-CN.md)**，Claude Code 和 WorkBuddy 都有步骤。
 
 ---
 

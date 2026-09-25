@@ -122,7 +122,8 @@ Known stable mis-hearings for this course belong in the workspace `terms.tsv` (t
 ## 5. Delegate the writing
 
 Pick the writer from the agent types available in this session:
-- `transcribe-course:transcriber` (plugin install) or `transcriber` (manual install) — Sonnet, medium effort; the default.
+- `transcribe-course:transcriber` (Claude Code plugin install) or `transcriber` (manual install, or hosts that do
+  not namespace plugin agents, such as WorkBuddy / CodeBuddy) — Sonnet, medium effort; the default.
 - `transcribe-course:transcriber-careful` / `transcriber-careful` — Opus; use when the user passed `--careful`,
   or when a draft fails the gate twice or stays under the coverage threshold.
 - Neither installed: `general-purpose` with `model: sonnet` (or `opus`), and put the text of
