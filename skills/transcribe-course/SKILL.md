@@ -31,7 +31,8 @@ TC init "<folder>" --preset rehab-zh --course "<course name>"    # presets: TC i
 TC doctor --full --workspace "<folder>"                          # packages, GPU, ffmpeg; --full runs a real inference
 ```
 Tell the user the first transcription downloads the Whisper model (large-v3 ≈ 3 GB; large-v3-turbo ≈ 1.6 GB
-on CPU-only machines). If `doctor` shows no GPU, warn that transcription takes about as long as the video.
+on CPU-only machines). If `doctor` shows no GPU, warn that transcription takes about as long as the video;
+on an Apple Silicon Mac suggest `pip install mlx-whisper`, which `doctor` and `transcribe` pick up automatically.
 
 **One lesson per session.** Transcribing is self-contained; a fresh session per video is cheapest and
 avoids the failure mode where a very long session starts refusing tool calls for unrelated reasons.

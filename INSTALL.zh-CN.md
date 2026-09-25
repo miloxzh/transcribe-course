@@ -10,7 +10,7 @@
 
 1. 一个能跑 Agent Skill 的工具：**Claude Code** 或 **WorkBuddy** 都行（其他支持 SKILL.md 的工具见第四节）。
 2. **Python 3.9 以上**。终端里输 `python --version` 能看到版本号就行。
-3. **最好有 NVIDIA 显卡**（显存 6G 以上）。有显卡时 20 分钟的课 1 到 3 分钟转完；没显卡也能跑，转写要等和视频差不多长的时间。
+3. **最好有 NVIDIA 显卡**（显存 6G 以上）或 **Apple 芯片的 Mac**（M1 以上）。有显卡时 20 分钟的课 1 到 3 分钟转完；Mac 装上 mlx-whisper 后走 Mac 自己的 GPU，也快很多；都没有也能跑，转写要等和视频差不多长的时间。
 4. **磁盘留 4G 左右**：第一次用会自动下载 3G 的 Whisper 模型。
 
 ---
@@ -43,8 +43,8 @@ WorkBuddy 内嵌的是 CodeBuddy 命令行，插件命令一样。在 WorkBuddy 
 
 1. 打开仓库页面，点绿色的 **Code** 按钮，选 **Download ZIP**，下载后解压。
 2. 把解压出来的 `skills\transcribe-course` 这个文件夹整个复制到
-   `C:\Users\你的用户名\.workbuddy\skills\transcribe-course`
-   （`.workbuddy` 是隐藏文件夹，在资源管理器地址栏直接输这个路径就能进去；没有 `skills` 文件夹就新建一个。）
+   `C:\Users\你的用户名\.workbuddy\skills\transcribe-course`（Mac 是 `~/.workbuddy/skills/transcribe-course`）
+   （`.workbuddy` 是隐藏文件夹，Windows 在资源管理器地址栏直接输这个路径就能进去，Mac 在访达按 Command+Shift+. 显示隐藏目录；没有 `skills` 文件夹就新建一个。）
    复制完检查层级：`transcribe-course` 文件夹里面直接就是 `SKILL.md`，不要套两层。
    也可以在 WorkBuddy 的技能页面用「上传本地技能」选这个文件夹导入。
 3. 重启 WorkBuddy。
@@ -66,6 +66,14 @@ pip install faster-whisper opencv-python numpy Pillow
 ```
 pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
 ```
+
+**Apple 芯片的 Mac** 再加一条（让 Whisper 跑在 Mac 的 GPU 上，装了就自动选用）：
+
+```
+pip install mlx-whisper
+```
+
+Mac 上 Python 通常要用 `python3` 和 `pip3`；`.workbuddy`、`.claude` 这些隐藏目录在访达里按 Command+Shift+. 显示。
 
 国内下载模型慢，先设一个镜像。Windows 在 PowerShell 里执行，然后重启工具：
 

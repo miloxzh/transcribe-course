@@ -91,7 +91,7 @@ lesson; the auditor gets the trail.
 |---|---|
 | Claude Code | desktop app or CLI, with subagents (any plan that can run the `Agent` tool) |
 | Python | 3.9+ with `faster-whisper`, `opencv-python`, `numpy`, `Pillow` (`pip install -r requirements.txt`) |
-| GPU | NVIDIA with ≥ 6 GB VRAM strongly recommended (`large-v3` float16). CPU works with `large-v3-turbo` at ~1× realtime. Apple Silicon = CPU path. |
+| GPU | NVIDIA with ≥ 6 GB VRAM (`large-v3` float16 via faster-whisper), or **Apple Silicon** with `pip install mlx-whisper` (large-v3 on the Mac GPU through MLX, picked automatically). Without either, CPU with `large-v3-turbo` at ~1× realtime. |
 | ffmpeg | optional; speeds up AV1/VP9 videos and frame grabs |
 | Disk | Whisper model 3 GB (downloaded on first use) + a few MB of frames per lesson |
 
@@ -121,7 +121,9 @@ the same gate. `${CLAUDE_SKILL_DIR}` is a Claude Code variable; on other hosts t
 pip install -r requirements.txt
 ```
 On NVIDIA machines the file also pulls `nvidia-cublas-cu12` and `nvidia-cudnn-cu12`, the only CUDA pieces
-faster-whisper needs — no CUDA toolkit install.
+faster-whisper needs — no CUDA toolkit install. On Apple Silicon it pulls `mlx-whisper` instead; `brew install
+ffmpeg` is recommended there (AV1 videos, and mlx-whisper's own audio loader when PyAV is missing). Hardware
+decoding for `frames` on a Mac: `--hwaccel videotoolbox`.
 
 ## First run
 
@@ -191,7 +193,7 @@ Everything the skill runs is a plain CLI you can use on its own (`python scripts
 
 | Where | What |
 |---|---|
-| `transcribe-course.json` | `language` (Whisper code or `auto`), `note_language` (`zh`/`en` template set), `flavor` (`obsidian`: `![[x]]` + `%%…%%`; `markdown`: `![](attachments/x)` + `<!-- -->`), `whisper_model`, `cpu_model`, `device`, `ffmpeg`, `hwaccel`, `coverage_threshold`, `banned_words`, `declaration_alternatives`, `dirs` |
+| `transcribe-course.json` | `language` (Whisper code or `auto`), `note_language` (`zh`/`en` template set), `flavor` (`obsidian`: `![[x]]` + `%%…%%`; `markdown`: `![](attachments/x)` + `<!-- -->`), `backend` (`auto`/`faster-whisper`/`mlx`), `whisper_model`, `cpu_model`, `mlx_model`, `device`, `ffmpeg`, `hwaccel`, `coverage_threshold`, `banned_words`, `declaration_alternatives`, `dirs` |
 | `vocab.txt` | terms for Whisper's initial prompt; the last ~224 tokens matter most, keep it short |
 | `terms.tsv` | `wrong<TAB>right`, applied blindly — only pairs that cannot mean anything else |
 | `templates/` (in the workspace) | drop a Markdown file with a `type:` in its frontmatter and `## ` headings; `verify` treats it as the contract for notes of that type. Copy and edit a built-in template, or add a new type (`assessment`, `case-study`, …) |

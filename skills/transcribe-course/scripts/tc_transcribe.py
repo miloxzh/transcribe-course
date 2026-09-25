@@ -8,6 +8,9 @@
 Output: transcripts/{stem}.json (segments with timestamps), transcripts/{stem}.txt (mm:ss  text)
 and transcripts/{stem}.log (this console output). Audio is decoded by PyAV, so ffmpeg is not needed.
 
+Backends: faster-whisper (NVIDIA GPU or CPU) everywhere; on Apple Silicon the `mlx` backend
+(`pip install mlx-whisper`) runs large-v3 on the GPU and is picked automatically when installed.
+
 Decoding parameters are deliberately conservative — see the comments in transcribe():
 the temperature fallback chain and condition_on_previous_text=False are what keep the model
 from collapsing into a repeated sentence for the rest of the file.
@@ -65,6 +68,47 @@ def preload_cuda_dlls():
                 except OSError:
                     pass
     return dirs
+
+
+def pick_backend(want: str) -> str:
+    """auto → mlx on Apple Silicon when mlx-whisper is installed, else faster-whisper."""
+    if want in ("mlx", "faster-whisper"):
+        return want
+    import platform
+    if sys.platform == "darwin" and platform.machine().lower() in ("arm64", "aarch64"):
+        try:
+            import mlx_whisper  # noqa: F401
+            return "mlx"
+        except ImportError:
+            pass
+    return "faster-whisper"
+
+
+def transcribe_mlx(source: Path, language: str | None, vocab: str, model_repo: str):
+    """Apple Silicon path. Same anti-loop settings as faster-whisper (temperature chain,
+    no conditioning on previous text). Audio is decoded with PyAV when available so ffmpeg
+    is not required; otherwise mlx-whisper shells out to ffmpeg itself."""
+    import mlx_whisper
+    audio = str(source)
+    try:
+        from faster_whisper.audio import decode_audio
+        audio = decode_audio(str(source), sampling_rate=16000)
+    except Exception:  # noqa: BLE001
+        pass
+    opts = {"language": language} if language else {}
+    result = mlx_whisper.transcribe(
+        audio,
+        path_or_hf_repo=model_repo,
+        temperature=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0),
+        compression_ratio_threshold=2.4,
+        condition_on_previous_text=False,
+        initial_prompt=vocab or None,
+        verbose=None,
+        **opts,
+    )
+    segs = [{"id": i, "start": round(float(s["start"]), 2), "end": round(float(s["end"]), 2), "text": s["text"]}
+            for i, s in enumerate(result.get("segments", []))]
+    return segs, result.get("language")
 
 
 def pick_device(want: str) -> str:
@@ -154,8 +198,9 @@ def main(argv):
     ap = argparse.ArgumentParser(prog="tc transcribe", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("video", help="video/audio file (path, or a name inside videos/)")
     ap.add_argument("--out", help="output stem (default: the file's own stem)")
-    ap.add_argument("--model", help="override the model (large-v3, large-v3-turbo, medium, ...)")
-    ap.add_argument("--device", choices=["auto", "cuda", "cpu"], help="override config device")
+    ap.add_argument("--model", help="override the model (large-v3, large-v3-turbo, medium, …; an HF repo for mlx)")
+    ap.add_argument("--backend", choices=["auto", "faster-whisper", "mlx"], help="override config backend")
+    ap.add_argument("--device", choices=["auto", "cuda", "cpu"], help="override config device (faster-whisper)")
     ap.add_argument("--language", help="override config language (code or 'auto')")
     ap.add_argument("--no-vocab", action="store_true", help="do not pass vocab.txt as the initial prompt")
     ap.add_argument("--force", action="store_true", help="overwrite an existing transcript")
@@ -175,10 +220,17 @@ def main(argv):
         log_path.unlink()
     sys.stdout = Tee(log_path)
 
-    device = pick_device(a.device or ws.cfg["device"])
-    model_name = a.model or (ws.cfg["whisper_model"] if device == "cuda" else ws.cfg["cpu_model"])
-    if device == "cpu" and not a.model and ws.cfg["whisper_model"] != ws.cfg["cpu_model"]:
-        say("⚠ no GPU: using %s on CPU (int8). Expect 1–2× the video length. Pass --model to override." % model_name)
+    backend = pick_backend(a.backend or ws.cfg.get("backend", "auto"))
+    if backend == "mlx":
+        device = "mlx"
+        model_name = a.model or ws.cfg.get("mlx_model", "mlx-community/whisper-large-v3-mlx")
+    else:
+        device = pick_device(a.device or ws.cfg["device"])
+        model_name = a.model or (ws.cfg["whisper_model"] if device == "cuda" else ws.cfg["cpu_model"])
+        if device == "cpu" and not a.model and ws.cfg["whisper_model"] != ws.cfg["cpu_model"]:
+            say("⚠ no GPU: using %s on CPU (int8). Expect 1–2× the video length. Pass --model to override." % model_name)
+            if sys.platform == "darwin":
+                say("  Apple Silicon: `pip install mlx-whisper` switches to the GPU-backed mlx backend automatically.")
     lang_cfg = a.language or ws.cfg["language"]
     language = None if (not lang_cfg or lang_cfg == "auto") else lang_cfg
     vocab = "" if a.no_vocab else load_vocab(ws.vocab_file, language or "")
@@ -190,37 +242,49 @@ def main(argv):
     say("audio   %.1f min | model %s | device %s | language %s | vocab %d chars" % (
         dur / 60, model_name, device, language or "auto", len(vocab)))
 
-    t0 = time.time()
-    try:
-        model = load_model(model_name, device)
-    except Exception as e:  # noqa: BLE001
-        say("✗ could not load model: %s" % e)
-        return 2
-    say("model loaded in %.0f s" % (time.time() - t0))
-
-    t1 = time.time()
     out = []
-    try:
-        segs, info = transcribe(model, src, language, vocab)
-        for s in segs:
-            out.append({"id": len(out), "start": round(s.start, 2), "end": round(s.end, 2), "text": s.text})
-            if len(out) % 50 == 0:
-                say("  %d segments / %.1f min…" % (len(out), s.end / 60))
-    except Exception as e:  # noqa: BLE001
-        say("✗ transcription failed: %s" % e)
-        if device == "cuda" and any(k in str(e).lower() for k in ("cublas", "cudnn", "cuda")):
-            say("  → Windows: pip install nvidia-cublas-cu12 nvidia-cudnn-cu12 ; or run with --device cpu")
-        return 2
+    info = None
+    detected_lang = language
+    if backend == "mlx":
+        t1 = time.time()
+        say("transcribing with mlx-whisper (no progress output until it finishes; the first run downloads the model)…")
+        try:
+            out, detected_lang = transcribe_mlx(src, language, vocab, model_name)
+        except Exception as e:  # noqa: BLE001
+            say("✗ transcription failed: %s" % e)
+            say("  → check `pip install mlx-whisper` and the model repo name (%s); or run with --backend faster-whisper" % model_name)
+            return 2
+    else:
+        t0 = time.time()
+        try:
+            model = load_model(model_name, device)
+        except Exception as e:  # noqa: BLE001
+            say("✗ could not load model: %s" % e)
+            return 2
+        say("model loaded in %.0f s" % (time.time() - t0))
+        t1 = time.time()
+        try:
+            segs, info = transcribe(model, src, language, vocab)
+            for s in segs:
+                out.append({"id": len(out), "start": round(s.start, 2), "end": round(s.end, 2), "text": s.text})
+                if len(out) % 50 == 0:
+                    say("  %d segments / %.1f min…" % (len(out), s.end / 60))
+        except Exception as e:  # noqa: BLE001
+            say("✗ transcription failed: %s" % e)
+            if device == "cuda" and any(k in str(e).lower() for k in ("cublas", "cudnn", "cuda")):
+                say("  → Windows: pip install nvidia-cublas-cu12 nvidia-cudnn-cu12 ; or run with --device cpu")
+            return 2
+        detected_lang = getattr(info, "language", language)
     el = time.time() - t1
     if not dur:
-        dur = getattr(info, "duration", 0.0) or 0.0
+        dur = (getattr(info, "duration", 0.0) or 0.0) if info else (out[-1]["end"] if out else 0.0)
     text = "".join(s["text"] for s in out)
     bad = text.count("�")
     best, best_txt, n_inner, inner_txt = loop_check(out)
 
     write_text(out_json, json.dumps({
-        "text": text, "segments": out, "language": getattr(info, "language", language),
-        "model": model_name, "device": device, "source": src.name, "duration": round(dur, 2),
+        "text": text, "segments": out, "language": detected_lang,
+        "model": model_name, "backend": backend, "device": device, "source": src.name, "duration": round(dur, 2),
     }, ensure_ascii=False, indent=1))
     lines = ["%02d:%02d  %s" % (int(s["start"]) // 60, int(s["start"]) % 60, s["text"].strip()) for s in out]
     write_text(out_json.with_suffix(".txt"), "\n".join(lines) + "\n")

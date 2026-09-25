@@ -41,6 +41,15 @@ def check_packages():
 
 def check_gpu():
     from tc_transcribe import preload_cuda_dlls
+    if sys.platform == "darwin" and platform.machine().lower() in ("arm64", "aarch64"):
+        try:
+            import mlx_whisper  # noqa: F401
+            say("  ✓ Apple Silicon: mlx-whisper installed → backend mlx (large-v3 on the GPU)")
+            return True
+        except ImportError:
+            say("  – Apple Silicon without mlx-whisper: faster-whisper runs on CPU (large-v3-turbo, ~1× realtime).")
+            say("    `pip install mlx-whisper` enables the GPU-backed mlx backend; it is picked automatically.")
+            return False
     dirs = preload_cuda_dlls()
     try:
         import ctranslate2
@@ -59,10 +68,7 @@ def check_gpu():
         return True
     say("  – no CUDA device visible to CTranslate2: CPU mode (int8, model %s)." % "large-v3-turbo")
     say("    A 20-minute lesson takes roughly 15–40 minutes on CPU instead of 1–2 minutes on a GPU.")
-    if platform.machine().lower() in ("arm64", "aarch64") and sys.platform == "darwin":
-        say("    Apple Silicon: faster-whisper runs on CPU only; that is expected.")
-    else:
-        say("    NVIDIA GPU present but not seen? pip install nvidia-cublas-cu12 nvidia-cudnn-cu12, then rerun.")
+    say("    NVIDIA GPU present but not seen? pip install nvidia-cublas-cu12 nvidia-cudnn-cu12, then rerun.")
     return False
 
 
@@ -116,7 +122,22 @@ def check_workspace(explicit):
 def full_inference(ws):
     """Real inference on a synthetic 3-second tone: proves DLLs, device and model download."""
     import numpy as np
-    from tc_transcribe import load_model, pick_device
+    from tc_transcribe import load_model, pick_backend, pick_device
+    backend = pick_backend((ws.cfg.get("backend") if ws else None) or "auto")
+    if backend == "mlx":
+        repo = (ws.cfg.get("mlx_model") if ws else None) or "mlx-community/whisper-large-v3-mlx"
+        say("  loading %s with mlx-whisper (first time downloads the model)…" % repo)
+        try:
+            import mlx_whisper
+            sr = 16000
+            t = np.arange(sr * 3) / sr
+            audio = (0.1 * np.sin(2 * np.pi * 440 * t)).astype(np.float32)
+            r = mlx_whisper.transcribe(audio, path_or_hf_repo=repo, verbose=None)
+            say("  ✓ mlx inference ran (%d segment(s) from a test tone — content is irrelevant)" % len(r.get("segments", [])))
+            return True
+        except Exception as e:  # noqa: BLE001
+            say("  ✗ mlx inference failed: %s" % e)
+            return False
     device = pick_device((ws.cfg["device"] if ws else "auto"))
     model_name = (ws.cfg["whisper_model"] if ws else "large-v3") if device == "cuda" else (ws.cfg["cpu_model"] if ws else "large-v3-turbo")
     say("  loading %s on %s (first time downloads the model)…" % (model_name, device))

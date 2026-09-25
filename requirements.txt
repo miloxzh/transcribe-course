@@ -9,6 +9,9 @@ Pillow>=10.0                 # contact sheets, subtitle strips
 nvidia-cublas-cu12; sys_platform != "darwin"
 nvidia-cudnn-cu12; sys_platform != "darwin"
 
+# Apple Silicon: Whisper on the GPU through MLX (picked automatically when installed).
+mlx-whisper; sys_platform == "darwin" and platform_machine == "arm64"
+
 # Optional: ffmpeg as a pip package if you do not want to install it system-wide.
 # Only used to speed up sequential frame extraction (AV1/VP9 videos) and accurate frame grabs.
 # imageio-ffmpeg

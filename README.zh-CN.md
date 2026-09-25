@@ -68,7 +68,7 @@ gaps:
 |---|---|
 | Claude Code | 桌面版或命令行版，能开子代理即可 |
 | Python | 3.9+，装 `faster-whisper`、`opencv-python`、`numpy`、`Pillow`（`pip install -r requirements.txt`） |
-| 显卡 | 强烈建议 NVIDIA、显存 ≥ 6 GB（`large-v3` float16）。没显卡走 CPU 的 `large-v3-turbo`，速度约 1 倍实时（20 分钟的课等 20 分钟左右）。Apple 芯片也是 CPU 路线。 |
+| 显卡 | NVIDIA、显存 ≥ 6 GB（faster-whisper 跑 `large-v3` float16），或 **Apple 芯片的 Mac** 装 `pip install mlx-whisper`（MLX 在 Mac 的 GPU 上跑 large-v3，装了就自动选用）。两者都没有就走 CPU 的 `large-v3-turbo`，约 1 倍实时。 |
 | ffmpeg | 可选；AV1/VP9 视频（B 站、YouTube 下载常见）抽帧会快很多 |
 | 磁盘 | Whisper 模型 3 GB（第一次用时自动下载）+ 每节课几 MB 的帧 |
 
@@ -94,7 +94,7 @@ CodeBuddy 命令行用 `codebuddy plugin marketplace add miloxzh/transcribe-cour
 ```bash
 pip install -r requirements.txt
 ```
-NVIDIA 机器上它会顺带装 `nvidia-cublas-cu12` 和 `nvidia-cudnn-cu12`，faster-whisper 只需要这两个 CUDA 组件，不用装 CUDA 工具包。
+NVIDIA 机器上它会顺带装 `nvidia-cublas-cu12` 和 `nvidia-cudnn-cu12`，faster-whisper 只需要这两个 CUDA 组件，不用装 CUDA 工具包。Apple 芯片的 Mac 上则会装 `mlx-whisper`；Mac 上建议 `brew install ffmpeg`（AV1 视频抽帧用，抽帧硬解参数是 `--hwaccel videotoolbox`）。
 
 国内下载模型慢的话，先设镜像：`HF_ENDPOINT=https://hf-mirror.com`。
 
@@ -163,7 +163,7 @@ skill 跑的每一步都是普通命令行，可以单独用（`python scripts/t
 
 | 在哪 | 改什么 |
 |---|---|
-| `transcribe-course.json` | `language`（Whisper 语言码或 `auto`）、`note_language`（`zh`/`en` 模板）、`flavor`（`obsidian`：`![[x]]` + `%%…%%`；`markdown`：`![](attachments/x)` + `<!-- -->`）、`whisper_model`、`cpu_model`、`device`、`ffmpeg`、`hwaccel`、`coverage_threshold`、`banned_words`、`declaration_alternatives`、`dirs` |
+| `transcribe-course.json` | `language`（Whisper 语言码或 `auto`）、`note_language`（`zh`/`en` 模板）、`flavor`（`obsidian`：`![[x]]` + `%%…%%`；`markdown`：`![](attachments/x)` + `<!-- -->`）、`backend`（`auto`/`faster-whisper`/`mlx`）、`whisper_model`、`cpu_model`、`mlx_model`、`device`、`ffmpeg`、`hwaccel`、`coverage_threshold`、`banned_words`、`declaration_alternatives`、`dirs` |
 | `vocab.txt` | 喂给 Whisper 的术语；只有最后约 224 个 token 起作用，保持精简、重要的放最后 |
 | `terms.tsv` | `错写<TAB>正确`，盲替换——只放在这门课里不可能有别的意思的词 |
 | 工作区 `templates/` | 放一个 frontmatter 里有 `type:` 的 Markdown 文件，`## ` 标题就是这类笔记的合同，`verify` 自动认。可以复制自带模板改，也可以加新类型（`评估`、`案例`……） |

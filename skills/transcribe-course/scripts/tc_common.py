@@ -29,9 +29,11 @@ DEFAULTS = {
     "language": "zh",                # Whisper language code, or "auto"
     "note_language": "zh",           # which template set to use: zh | en
     "flavor": "obsidian",            # obsidian (![[x]] + %%..%%) | markdown (![](..) + <!-- .. -->)
-    "whisper_model": "large-v3",     # model on GPU
-    "cpu_model": "large-v3-turbo",   # model used automatically when no GPU is found
-    "device": "auto",                # auto | cuda | cpu
+    "backend": "auto",               # auto | faster-whisper | mlx (Apple Silicon, needs `pip install mlx-whisper`)
+    "whisper_model": "large-v3",     # faster-whisper model on GPU
+    "cpu_model": "large-v3-turbo",   # faster-whisper model used automatically when no GPU is found
+    "mlx_model": "mlx-community/whisper-large-v3-mlx",   # MLX model repo on Apple Silicon
+    "device": "auto",                # auto | cuda | cpu (faster-whisper only)
     "ffmpeg": "",                    # optional path to ffmpeg; auto-detected when empty
     "hwaccel": "",                   # optional ffmpeg -hwaccel value, e.g. "cuda"
     "vocab_file": "vocab.txt",

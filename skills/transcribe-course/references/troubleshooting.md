@@ -29,8 +29,17 @@ before running: `HF_ENDPOINT=https://hf-mirror.com` (works in China). To keep th
 
 **No GPU: it takes as long as the video**
 Expected. The CPU path uses `large-v3-turbo` in int8 at roughly 1× realtime. Options: a machine with an
-NVIDIA card (any 6 GB+ card runs large-v3 float16), or accept the wait and start the transcription before
-doing something else. Apple Silicon runs on CPU too.
+NVIDIA card (any 6 GB+ card runs large-v3 float16), a Mac with Apple Silicon (see next entry), or accept the
+wait and start the transcription before doing something else.
+
+**Apple Silicon Mac: slow, or "mlx" not used**
+faster-whisper cannot use the Mac GPU. `pip install mlx-whisper` adds the MLX backend; `doctor` shows
+"backend mlx" and `transcribe` picks it automatically (`backend: "auto"` in the config; force with
+`--backend mlx` or `--backend faster-whisper`). The MLX model is downloaded from Hugging Face on first use
+(`mlx_model` in the config, default `mlx-community/whisper-large-v3-mlx`; the turbo variant is
+`mlx-community/whisper-large-v3-turbo`). mlx-whisper has no VAD filter, so a long silent stretch can
+produce a stray sentence; the loop check still runs and the writer treats it like any other transcript.
+Intel Macs stay on the CPU path.
 
 **Vocabulary does not seem to help**
 Whisper uses only the last ~224 tokens of the initial prompt. Put the most important terms at the end of
